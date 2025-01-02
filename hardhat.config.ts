@@ -1,8 +1,8 @@
+import '@nomicfoundation/hardhat-toolbox';
+import '@nomicfoundation/hardhat-verify';
+import '@openzeppelin/hardhat-upgrades';
 import dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/config';
-import '@nomicfoundation/hardhat-toolbox';
-import '@openzeppelin/hardhat-upgrades';
-import '@nomicfoundation/hardhat-verify';
 
 dotenv.config();
 
@@ -35,11 +35,11 @@ const config: HardhatUserConfig = {
     //   accounts: [`0x${process.env.MAIN_PRIVATE_KEY}`],
     //   gasPrice: 200000000000
     // },
-    // amoy: {
-    //   chainId: 80002,
-    //   url: `${process.env.AMOY_RPC_URL}`,
-    //   accounts: [`0x${process.env.AMOY_PRIVATE_KEY}`]
-    // },
+     amoy: {
+       chainId: 80002,
+       url: `${process.env.AMOY_RPC_URL}`,
+       accounts: [`0x${process.env.AMOY_PRIVATE_KEY}`]
+     },
     // 'linea-sepolia': {
     //   chainId: 59141,
     //   url: `${process.env.LINEA_SEPOLIA_RPC_URL}`,

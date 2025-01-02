@@ -1,5 +1,8 @@
+import { Blockchain, buildDIDType, DidMethod, NetworkId } from '@iden3/js-iden3-core';
 import { expect } from 'chai';
+import { Contract } from 'ethers';
 import { ethers } from 'hardhat';
+import { StateDeployHelper } from '../helpers/StateDeployHelper';
 import {
   deployERC20LinkedUniversalVerifier,
   deployValidatorContracts,
@@ -13,9 +16,6 @@ import {
   packZKProof,
   unpackV2ValidatorParams
 } from '../utils/pack-utils';
-import { Contract } from 'ethers';
-import { Blockchain, buildDIDType, DidMethod, NetworkId } from '@iden3/js-iden3-core';
-import { StateDeployHelper } from '../helpers/StateDeployHelper';
 
 const tenYears = 315360000;
 const query = {
