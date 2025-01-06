@@ -1,0 +1,1 @@
+npx patch-package  @iden3/contracts

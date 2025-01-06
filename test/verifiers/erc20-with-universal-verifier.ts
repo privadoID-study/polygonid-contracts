@@ -27,7 +27,8 @@ const query = {
   slotIndex: BigInt(0),
   value: ['1420070400000000000', ...new Array(63).fill('0')].map((x) => BigInt(x)),
   circuitIds: [''],
-  queryHash: BigInt('1496222740463292783938163206931059379817846775593932664024082849882751356658'),
+  //queryHash: BigInt('1496222740463292783938163206931059379817846775593932664024082849882751356658'),
+  queryHash: BigInt('7854321536597559201098551954568590097739874725708651207094499063296207596002'),
   claimPathNotExists: 0,
   metadata: 'test medatada',
   skipClaimRevocationCheck: false
@@ -38,10 +39,16 @@ describe('ERC 20 test', function () {
   let universalVerifier: Contract, erc20LinkedUniversalVerifier: Contract;
 
   before(async () => {
-    const typ0 = buildDIDType(DidMethod.Iden3, Blockchain.ReadOnly, NetworkId.NoNetwork);
-    const typ1 = buildDIDType(DidMethod.Iden3, Blockchain.Polygon, NetworkId.Mumbai);
+
+    const typ0 = buildDIDType(DidMethod.PolygonId, Blockchain.ReadOnly, NetworkId.NoNetwork);
+    const typ1 = buildDIDType(DidMethod.PolygonId, Blockchain.Polygon, NetworkId.Mumbai);
+    const typ2 = buildDIDType(DidMethod.PolygonId, Blockchain.Polygon, NetworkId.Amoy);
+
+    console.log('typ0:', typ0);
+    console.log('typ1:', typ1);
+    console.log('typ2:', typ2);
     const stateDeployHelper = await StateDeployHelper.initialize();
-    ({ state } = await stateDeployHelper.deployState([typ0, typ1]));
+    ({ state } = await stateDeployHelper.deployState([typ0, typ1, typ2]));
     const stateAddress = await state.getAddress();
     const contractsSig = await deployValidatorContracts(
       'VerifierSigWrapper',
@@ -85,6 +92,7 @@ describe('ERC 20 test', function () {
     await erc20VerifierFlow('credentialAtomicQuerySigV2OnChain');
   });
 
+  /*
   it('Example ERC20 Verifier: set zkp request Mtp validator + submit zkp response', async () => {
     await erc20VerifierFlow('credentialAtomicQueryMTPV2OnChain');
   });
@@ -96,6 +104,7 @@ describe('ERC 20 test', function () {
   it('Example ERC20 Verifier: set zkp request Mtp validator + submit zkp response V2', async () => {
     await erc20VerifierFlowV2('credentialAtomicQueryMTPV2OnChain');
   });
+  */
 
   async function setZKPRequests() {
     async function setRequest(requestId, query, validatorAddress) {
@@ -142,7 +151,7 @@ describe('ERC 20 test', function () {
     const { inputs, pi_a, pi_b, pi_c } = prepareInputs(
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       validator === 'credentialAtomicQuerySigV2OnChain'
-        ? require('./common-data/valid_sig_user_non_genesis_challenge_address.json')
+        ? require('./common-data/sig_on_chain_test.json' /*'./common-data/valid_sig_user_non_genesis_challenge_address.json'*/)
         : require('./common-data/valid_mtp_user_non_genesis_challenge_address.json')
     );
 

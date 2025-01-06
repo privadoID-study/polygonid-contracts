@@ -1,0 +1,422 @@
+diff --git a/node_modules/@iden3/contracts/state/State.sol b/node_modules/@iden3/contracts/state/State.sol
+index dbb6f65..25b0fd5 100644
+--- a/node_modules/@iden3/contracts/state/State.sol
++++ b/node_modules/@iden3/contracts/state/State.sol
+@@ -1,22 +1,23 @@
+ // SPDX-License-Identifier: GPL-3.0
+ pragma solidity 0.8.27;
+ 
+-import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+-import {IState, MAX_SMT_DEPTH} from "../interfaces/IState.sol";
+-import {IStateTransitionVerifier} from "../interfaces/IStateTransitionVerifier.sol";
+-import {SmtLib} from "../lib/SmtLib.sol";
+-import {PoseidonUnit1L} from "../lib/Poseidon.sol";
+-import {StateLib} from "../lib/StateLib.sol";
+-import {StateCrossChainLib} from "../lib/StateCrossChainLib.sol";
+-import {GenesisUtils} from "../lib/GenesisUtils.sol";
+-import {ICrossChainProofValidator} from "../interfaces/ICrossChainProofValidator.sol";
++import {Ownable2StepUpgradeable} from '@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol';
++import {IState, MAX_SMT_DEPTH} from '../interfaces/IState.sol';
++import {IStateTransitionVerifier} from '../interfaces/IStateTransitionVerifier.sol';
++import {SmtLib} from '../lib/SmtLib.sol';
++import {PoseidonUnit1L} from '../lib/Poseidon.sol';
++import {StateLib} from '../lib/StateLib.sol';
++import {StateCrossChainLib} from '../lib/StateCrossChainLib.sol';
++import {GenesisUtils} from '../lib/GenesisUtils.sol';
++import {ICrossChainProofValidator} from '../interfaces/ICrossChainProofValidator.sol';
++import 'hardhat/console.sol';
+ 
+ /// @title Set and get states for each identity
+ contract State is Ownable2StepUpgradeable, IState {
+     /**
+      * @dev Version of contract
+      */
+-    string public constant VERSION = "2.6.1";
++    string public constant VERSION = '2.6.1';
+ 
+     // This empty reserved space is put in place to allow future versions
+     // of the State contract to inherit from other contracts without a risk of
+@@ -99,7 +100,7 @@ contract State is Ownable2StepUpgradeable, IState {
+         }
+ 
+         if (address(verifierContractAddr) == address(0)) {
+-            revert("Verifier contract address should not be zero");
++            revert('Verifier contract address should not be zero');
+         }
+ 
+         verifier = verifierContractAddr;
+@@ -140,7 +141,7 @@ contract State is Ownable2StepUpgradeable, IState {
+      * @return defaultIdType
+      */
+     function getDefaultIdType() public view returns (bytes2) {
+-        require(_defaultIdTypeInitialized, "Default Id Type is not initialized");
++        require(_defaultIdTypeInitialized, 'Default Id Type is not initialized');
+         return _defaultIdType;
+     }
+ 
+@@ -176,7 +177,7 @@ contract State is Ownable2StepUpgradeable, IState {
+         uint256[4] memory input = [id, oldState, newState, uint256(isOldStateGenesis ? 1 : 0)];
+         require(
+             verifier.verifyProof(a, b, c, input),
+-            "Zero-knowledge proof of state transition is not valid"
++            'Zero-knowledge proof of state transition is not valid'
+         );
+ 
+         _transitState(id, oldState, newState, isOldStateGenesis);
+@@ -202,16 +203,16 @@ contract State is Ownable2StepUpgradeable, IState {
+         bytes2 idType = getIdTypeIfSupported(id);
+         if (methodId == 1) {
+             uint256 calcId = GenesisUtils.calcIdFromEthAddress(idType, msg.sender);
+-            require(calcId == id, "msg.sender is not owner of the identity");
+-            require(methodParams.length == 0, "methodParams should be empty");
++            require(calcId == id, 'msg.sender is not owner of the identity');
++            require(methodParams.length == 0, 'methodParams should be empty');
+ 
+             if (isOldStateGenesis) {
+-                require(oldState == 0, "Old state should be zero");
++                require(oldState == 0, 'Old state should be zero');
+             }
+ 
+             _transitState(id, oldState, newState, isOldStateGenesis);
+         } else {
+-            revert("Unknown state transition method id");
++            revert('Unknown state transition method id');
+         }
+     }
+ 
+@@ -446,14 +447,14 @@ contract State is Ownable2StepUpgradeable, IState {
+             } else if (GenesisUtils.isGenesisState(id, state)) {
+                 return 0;
+             }
+-            revert("State entry not found");
++            revert('State entry not found');
+         } else {
+             StateCrossChainStorage storage $ = _getStateCrossChainStorage();
+             uint256 replacedAt = $._idToStateReplacedAt[id][state];
+             if (replacedAt != 0) {
+                 return replacedAt;
+             }
+-            revert("Cross-chain state not found");
++            revert('Cross-chain state not found');
+         }
+     }
+ 
+@@ -468,14 +469,21 @@ contract State is Ownable2StepUpgradeable, IState {
+             if (_gistData.rootExists(root)) {
+                 return _gistData.getRootInfo(root).replacedAtTimestamp;
+             }
+-            revert("GIST root entry not found");
++            revert('GIST root entry not found');
+         } else {
+             StateCrossChainStorage storage $ = _getStateCrossChainStorage();
+             uint256 replacedAt = $._rootToGistRootReplacedAt[idType][root];
+             if (replacedAt != 0) {
+                 return replacedAt;
+             }
+-            revert("Cross-chain GIST root not found");
++            revert(
++                string(
++                    abi.encodePacked(
++                        'Cross-chain GIST root not found for idType: ',
++                        uint256ToString(uint256(uint16(idType)))
++                    )
++                )
++            );
+         }
+     }
+ 
+@@ -492,23 +500,23 @@ contract State is Ownable2StepUpgradeable, IState {
+         uint256 newState,
+         bool isOldStateGenesis
+     ) internal {
+-        require(id != 0, "ID should not be zero");
+-        require(newState != 0, "New state should not be zero");
++        require(id != 0, 'ID should not be zero');
++        require(newState != 0, 'New state should not be zero');
+ 
+         if (isOldStateGenesis) {
+-            require(!idExists(id), "Old state is genesis but identity already exists");
++            require(!idExists(id), 'Old state is genesis but identity already exists');
+ 
+             // Push old state to state entries, with zero timestamp and block
+             _stateData.addGenesisState(id, oldState);
+         } else {
+-            require(idExists(id), "Old state is not genesis but identity does not yet exist");
++            require(idExists(id), 'Old state is not genesis but identity does not yet exist');
+ 
+             StateLib.EntryInfo memory prevStateInfo = _stateData.getStateInfoById(id);
+-            require(prevStateInfo.state == oldState, "Old state does not match the latest state");
++            require(prevStateInfo.state == oldState, 'Old state does not match the latest state');
+         }
+ 
+         // this checks that oldState != newState as well
+-        require(!stateExists(id, newState), "New state already exists");
++        require(!stateExists(id, newState), 'New state already exists');
+         _stateData.addState(id, newState);
+         _gistData.addLeaf(PoseidonUnit1L.poseidon([id]), newState);
+     }
+@@ -582,7 +590,7 @@ contract State is Ownable2StepUpgradeable, IState {
+      */
+     function getIdTypeIfSupported(uint256 id) public view returns (bytes2) {
+         bytes2 idType = GenesisUtils.getIdType(id);
+-        require(_stateData.isIdTypeSupported[idType], "id type is not supported");
++        require(_stateData.isIdTypeSupported[idType], 'id type is not supported');
+         return idType;
+     }
+ 
+@@ -592,6 +600,26 @@ contract State is Ownable2StepUpgradeable, IState {
+      * @param supported ability to enable or disable id type support
+      */
+     function setSupportedIdType(bytes2 idType, bool supported) public onlyOwner {
++        console.log('idType:', uint256ToString(uint256(uint16(idType))));
+         _stateData.isIdTypeSupported[idType] = supported;
+     }
++
++    function uint256ToString(uint256 value) internal pure returns (string memory) {
++        if (value == 0) {
++            return '0';
++        }
++        uint256 temp = value;
++        uint256 digits;
++        while (temp != 0) {
++            digits++;
++            temp /= 10;
++        }
++        bytes memory buffer = new bytes(digits);
++        while (value != 0) {
++            digits -= 1;
++            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
++            value /= 10;
++        }
++        return string(buffer);
++    }
+ }
+diff --git a/node_modules/@iden3/contracts/validators/CredentialAtomicQueryV2ValidatorBase.sol b/node_modules/@iden3/contracts/validators/CredentialAtomicQueryV2ValidatorBase.sol
+index d4d1726..40d45d6 100644
+--- a/node_modules/@iden3/contracts/validators/CredentialAtomicQueryV2ValidatorBase.sol
++++ b/node_modules/@iden3/contracts/validators/CredentialAtomicQueryV2ValidatorBase.sol
+@@ -1,11 +1,11 @@
+ // SPDX-License-Identifier: GPL-3.0
+ pragma solidity 0.8.27;
+ 
+-import {CredentialAtomicQueryValidatorBase} from "./CredentialAtomicQueryValidatorBase.sol";
+-import {IVerifier} from "../interfaces/IVerifier.sol";
+-import {ICircuitValidator} from "../interfaces/ICircuitValidator.sol";
+-import {IState} from "../interfaces/IState.sol";
+-
++import {CredentialAtomicQueryValidatorBase} from './CredentialAtomicQueryValidatorBase.sol';
++import {IVerifier} from '../interfaces/IVerifier.sol';
++import {ICircuitValidator} from '../interfaces/ICircuitValidator.sol';
++import {IState} from '../interfaces/IState.sol';
++import 'hardhat/console.sol';
+ /**
+  * @dev Base contract for credential atomic query v2 validators circuits.
+  */
+@@ -126,21 +126,28 @@ abstract contract CredentialAtomicQueryV2ValidatorBase is CredentialAtomicQueryV
+     ) internal view returns (PubSignals memory) {
+         CredentialAtomicQuery memory credAtomicQuery = abi.decode(data, (CredentialAtomicQuery));
+ 
+-        require(credAtomicQuery.circuitIds.length == 1, "circuitIds length is not equal to 1");
++        require(credAtomicQuery.circuitIds.length == 1, 'circuitIds length is not equal to 1');
+ 
+         IVerifier verifier = getVerifierByCircuitId(credAtomicQuery.circuitIds[0]);
+ 
+-        require(verifier != IVerifier(address(0)), "Verifier address should not be zero");
++        require(verifier != IVerifier(address(0)), 'Verifier address should not be zero');
+ 
+         // verify that zkp is valid
+-        require(verifier.verify(a, b, c, inputs), "Proof is not valid");
++        require(verifier.verify(a, b, c, inputs), 'Proof is not valid');
+ 
+         PubSignals memory pubSignals = parsePubSignals(inputs);
+ 
+         // check circuitQueryHash
+         require(
+             pubSignals.circuitQueryHash == credAtomicQuery.queryHash,
+-            "Query hash does not match the requested one"
++            string(
++                abi.encodePacked(
++                    'Query hash mismatch: circuitQueryHash = ',
++                    uint256ToString(pubSignals.circuitQueryHash),
++                    ', queryHash = ',
++                    uint256ToString(credAtomicQuery.queryHash)
++                )
++            )
+         );
+ 
+         // TODO: add support for query to specific userID and then verifying it
+@@ -157,6 +164,7 @@ abstract contract CredentialAtomicQueryV2ValidatorBase is CredentialAtomicQueryV
+         _checkChallenge(pubSignals.challenge, sender);
+ 
+         // GIST root and state checks
++        console.log('_verifyMain pubSignals.userID:', uint256ToString(pubSignals.userID));
+         _checkGistRoot(pubSignals.userID, pubSignals.gistRoot, state);
+         _checkClaimIssuanceState(pubSignals.issuerID, pubSignals.issuerState, state);
+         _checkClaimNonRevState(pubSignals.issuerID, pubSignals.issuerClaimNonRevState, state);
+@@ -166,7 +174,7 @@ abstract contract CredentialAtomicQueryV2ValidatorBase is CredentialAtomicQueryV
+ 
+     function _checkMerklized(uint256 merklized, uint256 queryClaimPathKey) internal pure {
+         uint256 shouldBeMerklized = queryClaimPathKey != 0 ? 1 : 0;
+-        require(merklized == shouldBeMerklized, "Merklized value is not correct");
++        require(merklized == shouldBeMerklized, 'Merklized value is not correct');
+     }
+ 
+     function _checkIsRevocationChecked(
+@@ -179,7 +187,7 @@ abstract contract CredentialAtomicQueryV2ValidatorBase is CredentialAtomicQueryV
+         }
+         require(
+             isRevocationChecked == expectedIsRevocationChecked,
+-            "Revocation check should match the query"
++            'Revocation check should match the query'
+         );
+     }
+ 
+@@ -187,8 +195,8 @@ abstract contract CredentialAtomicQueryV2ValidatorBase is CredentialAtomicQueryV
+         PubSignals memory pubSignals
+     ) internal pure returns (ICircuitValidator.Signal[] memory) {
+         ICircuitValidator.Signal[] memory signals = new ICircuitValidator.Signal[](2);
+-        signals[0] = ICircuitValidator.Signal({name: "userID", value: pubSignals.userID});
+-        signals[1] = ICircuitValidator.Signal({name: "timestamp", value: pubSignals.timestamp});
++        signals[0] = ICircuitValidator.Signal({name: 'userID', value: pubSignals.userID});
++        signals[1] = ICircuitValidator.Signal({name: 'timestamp', value: pubSignals.timestamp});
+         return signals;
+     }
+ 
+@@ -200,12 +208,12 @@ abstract contract CredentialAtomicQueryV2ValidatorBase is CredentialAtomicQueryV
+         ICircuitValidator.KeyToInputIndex[]
+             memory keyToInputIndexes = new ICircuitValidator.KeyToInputIndex[](2);
+         keyToInputIndexes[0] = ICircuitValidator.KeyToInputIndex({
+-            key: "userID",
+-            inputIndex: inputIndexOf("userID")
++            key: 'userID',
++            inputIndex: inputIndexOf('userID')
+         });
+         keyToInputIndexes[1] = ICircuitValidator.KeyToInputIndex({
+-            key: "timestamp",
+-            inputIndex: inputIndexOf("timestamp")
++            key: 'timestamp',
++            inputIndex: inputIndexOf('timestamp')
+         });
+         return keyToInputIndexes;
+     }
+diff --git a/node_modules/@iden3/contracts/validators/CredentialAtomicQueryValidatorBase.sol b/node_modules/@iden3/contracts/validators/CredentialAtomicQueryValidatorBase.sol
+index a972a12..26fadb7 100644
+--- a/node_modules/@iden3/contracts/validators/CredentialAtomicQueryValidatorBase.sol
++++ b/node_modules/@iden3/contracts/validators/CredentialAtomicQueryValidatorBase.sol
+@@ -1,13 +1,13 @@
+ // SPDX-License-Identifier: GPL-3.0
+ pragma solidity 0.8.27;
+ 
+-import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+-import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+-import {GenesisUtils} from "../lib/GenesisUtils.sol";
+-import {ICircuitValidator} from "../interfaces/ICircuitValidator.sol";
+-import {IVerifier} from "../interfaces/IVerifier.sol";
+-import {IState} from "../interfaces/IState.sol";
+-import {PrimitiveTypeUtils} from "../lib/PrimitiveTypeUtils.sol";
++import {Ownable2StepUpgradeable} from '@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol';
++import {ERC165} from '@openzeppelin/contracts/utils/introspection/ERC165.sol';
++import {GenesisUtils} from '../lib/GenesisUtils.sol';
++import {ICircuitValidator} from '../interfaces/ICircuitValidator.sol';
++import {IVerifier} from '../interfaces/IVerifier.sol';
++import {IState} from '../interfaces/IState.sol';
++import {PrimitiveTypeUtils} from '../lib/PrimitiveTypeUtils.sol';
+ 
+ /**
+  * @dev Base contract for credential atomic query validators circuits.
+@@ -201,7 +201,7 @@ abstract contract CredentialAtomicQueryValidatorBase is
+      */
+     function inputIndexOf(string memory name) public view virtual returns (uint256) {
+         uint256 index = _getCredentialAtomicQueryValidatorBaseStorage()._inputNameToIndex[name];
+-        require(index != 0, "Input name not found");
++        require(index != 0, 'Input name not found');
+         return --index; // we save 1-based index, but return 0-based
+     }
+ 
+@@ -221,7 +221,14 @@ abstract contract CredentialAtomicQueryValidatorBase is
+         uint256 replacedAt = _stateContract.getGistRootReplacedAt(idType, _gistRoot);
+ 
+         if (replacedAt != 0 && block.timestamp > $.gistRootExpirationTimeout + replacedAt) {
+-            revert("Gist root is expired");
++            revert(
++                string(
++                    abi.encodePacked(
++                        'Gist root is expired for idType: ',
++                        uint256ToString(uint256(uint16(idType)))
++                    )
++                )
++            );
+         }
+     }
+ 
+@@ -243,7 +250,7 @@ abstract contract CredentialAtomicQueryValidatorBase is
+         uint256 replacedAt = _stateContract.getStateReplacedAt(_id, _claimNonRevState);
+ 
+         if (replacedAt != 0 && block.timestamp > $.revocationStateExpirationTimeout + replacedAt) {
+-            revert("Non-Revocation state of Issuer expired");
++            revert('Non-Revocation state of Issuer expired');
+         }
+     }
+ 
+@@ -254,14 +261,14 @@ abstract contract CredentialAtomicQueryValidatorBase is
+             https://github.com/ethereum/go-ethereum/issues/24152
+         */
+         if (_proofGenerationTimestamp > (block.timestamp + 5 minutes)) {
+-            revert("Proof generated in the future is not valid");
++            revert('Proof generated in the future is not valid');
+         }
+         if (
+             block.timestamp >
+             _getCredentialAtomicQueryValidatorBaseStorage().proofExpirationTimeout +
+                 _proofGenerationTimestamp
+         ) {
+-            revert("Generated proof is outdated");
++            revert('Generated proof is outdated');
+         }
+     }
+ 
+@@ -277,13 +284,18 @@ abstract contract CredentialAtomicQueryValidatorBase is
+             }
+         }
+ 
+-        revert("Issuer is not on the Allowed Issuers list");
++        revert('Issuer is not on the Allowed Issuers list');
+     }
+ 
+     function _checkChallenge(uint256 challenge, address sender) internal pure {
+         require(
+             PrimitiveTypeUtils.uint256LEToAddress(challenge) == sender,
+-            "Challenge should match the sender"
++            string(
++                abi.encodePacked(
++                    'Challenge should match the sender: ',
++                    uint256ToString(PrimitiveTypeUtils.addressToUint256LE(sender))
++                )
++            )
+         );
+     }
+ 
+@@ -291,4 +303,23 @@ abstract contract CredentialAtomicQueryValidatorBase is
+         // increment index to avoid 0
+         _getCredentialAtomicQueryValidatorBaseStorage()._inputNameToIndex[inputName] = ++index;
+     }
++
++    function uint256ToString(uint256 value) internal pure returns (string memory) {
++        if (value == 0) {
++            return '0';
++        }
++        uint256 temp = value;
++        uint256 digits;
++        while (temp != 0) {
++            digits++;
++            temp /= 10;
++        }
++        bytes memory buffer = new bytes(digits);
++        while (value != 0) {
++            digits -= 1;
++            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
++            value /= 10;
++        }
++        return string(buffer);
++    }
+ }

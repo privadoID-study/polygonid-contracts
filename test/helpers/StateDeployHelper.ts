@@ -1,6 +1,6 @@
-import { ethers, upgrades, network } from 'hardhat';
-import { Contract } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { Contract } from 'ethers';
+import { ethers, network, upgrades } from 'hardhat';
 import { deployPoseidons } from '../utils/deploy-poseidons.util';
 import { chainIdDefaultIdTypeMap } from './ChainIdDefTypeMap';
 import { chainIdInfoMap } from './constants';
@@ -223,6 +223,7 @@ export class StateDeployHelper {
     if (!defaultIdType) {
       throw new Error(`Failed to find defaultIdType in Map for chainId ${chainId}`);
     }
+    console.log(`defaultIdType: ${defaultIdType}, chainId: ${chainId}`);
     return { defaultIdType, chainId };
   }
 

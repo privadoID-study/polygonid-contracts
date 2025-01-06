@@ -1,4 +1,7 @@
+import { Blockchain, buildDIDType, DidMethod, NetworkId } from '@iden3/js-iden3-core';
 import { expect } from 'chai';
+import { Contract } from 'ethers';
+import { StateDeployHelper } from '../helpers/StateDeployHelper';
 import {
   deployERC20ZKPVerifierToken,
   deployValidatorContracts,
@@ -6,9 +9,6 @@ import {
   publishState
 } from '../utils/deploy-utils';
 import { packV2ValidatorParams, unpackV2ValidatorParams } from '../utils/pack-utils';
-import { Contract } from 'ethers';
-import { Blockchain, buildDIDType, DidMethod, NetworkId } from '@iden3/js-iden3-core';
-import { StateDeployHelper } from '../helpers/StateDeployHelper';
 
 const tenYears = 315360000;
 describe('ERC 20 test', function () {
