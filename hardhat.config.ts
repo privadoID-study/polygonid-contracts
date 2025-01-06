@@ -99,6 +99,9 @@ const config: HardhatUserConfig = {
     coinmarketcap: process.env.COINMARKETCAP_KEY,
     enabled: !!process.env.REPORT_GAS,
     token: 'MATIC'
+  },
+  mocha: {
+    timeout: 120000
   }
 };
 

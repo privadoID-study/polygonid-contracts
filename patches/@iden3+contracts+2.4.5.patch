@@ -1,5 +1,5 @@
 diff --git a/node_modules/@iden3/contracts/state/State.sol b/node_modules/@iden3/contracts/state/State.sol
-index dbb6f65..25b0fd5 100644
+index dbb6f65..d352513 100644
 --- a/node_modules/@iden3/contracts/state/State.sol
 +++ b/node_modules/@iden3/contracts/state/State.sol
 @@ -1,22 +1,23 @@
@@ -155,16 +155,25 @@ index dbb6f65..25b0fd5 100644
          _stateData.addState(id, newState);
          _gistData.addLeaf(PoseidonUnit1L.poseidon([id]), newState);
      }
-@@ -582,7 +590,7 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -582,7 +590,16 @@ contract State is Ownable2StepUpgradeable, IState {
       */
      function getIdTypeIfSupported(uint256 id) public view returns (bytes2) {
          bytes2 idType = GenesisUtils.getIdType(id);
 -        require(_stateData.isIdTypeSupported[idType], "id type is not supported");
-+        require(_stateData.isIdTypeSupported[idType], 'id type is not supported');
++        require(
++            _stateData.isIdTypeSupported[idType],
++            string(
++                abi.encodePacked(
++                    'id type ',
++                    uint256ToString(uint256(uint16(idType))),
++                    ' is not supported'
++                )
++            )
++        );
          return idType;
      }
  
-@@ -592,6 +600,26 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -592,6 +609,26 @@ contract State is Ownable2StepUpgradeable, IState {
       * @param supported ability to enable or disable id type support
       */
      function setSupportedIdType(bytes2 idType, bool supported) public onlyOwner {

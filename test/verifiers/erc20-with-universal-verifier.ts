@@ -43,12 +43,14 @@ describe('ERC 20 test', function () {
     const typ0 = buildDIDType(DidMethod.PolygonId, Blockchain.ReadOnly, NetworkId.NoNetwork);
     const typ1 = buildDIDType(DidMethod.PolygonId, Blockchain.Polygon, NetworkId.Mumbai);
     const typ2 = buildDIDType(DidMethod.PolygonId, Blockchain.Polygon, NetworkId.Amoy);
+    const typ3 = buildDIDType(DidMethod.Iden3, Blockchain.ReadOnly, NetworkId.NoNetwork);
 
     console.log('typ0:', typ0);
     console.log('typ1:', typ1);
     console.log('typ2:', typ2);
+    console.log('typ3:', typ3);
     const stateDeployHelper = await StateDeployHelper.initialize();
-    ({ state } = await stateDeployHelper.deployState([typ0, typ1, typ2]));
+    ({ state } = await stateDeployHelper.deployState([typ0, typ1, typ2, typ3]));
     const stateAddress = await state.getAddress();
     const contractsSig = await deployValidatorContracts(
       'VerifierSigWrapper',
