@@ -153,9 +153,9 @@ describe('ERC 20 test for open', function () {
 
     const identityStateMessage1 = {
       timestamp: timestamp,
-      id: 25530185136167283063987925153802803371825564143650291260157676786685420033n,
-      state: 4595702004868323299100310062178085028712435650290319955390778053863052230284n,
-      replacedAtTimestamp: 0n
+      id: 27511287406781424064262949052237354979178988383049147075679026794560361217n, //todo:verify did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG & 27511287406781424064262949052237354979178988383049147075679026794560361217n
+      state: 15543561709461355383430801751387051227231886662990843157449346585018625170315n,
+      replacedAtTimestamp: 1735887383n
     };
 
     //curl http://localhost:8080/1.0/identifiers/did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG?state=8B1B24F106EA6B54C3C5693668AAFF1757A2F78BDE40ECFFEC9996F61A585D22
@@ -163,14 +163,14 @@ describe('ERC 20 test for open', function () {
     //https://www.mobilefish.com/services/big_number/big_number.php
     //https://www.save-editor.com/tools/wse_hex.html#littleendian
 
-    /*
     const identityStateUpdate2 = {
       timestamp: timestamp,
-      id: 25530185136167283063987925153802803371825564143650291260157676786685420033n,
-      state: 16775015541053109108201708100382933592407720757224325883910784163897594100403n,
-      replacedAtTimestamp: 1724858009n
+      id: 27511287406781424064262949052237354979178988383049147075679026794560361217n,
+      state: 20870748078893737009143669866363587797530199608693740726720179829793482770656n,
+      replacedAtTimestamp: 0n
     };
-    */
+
+    //curl http://localhost:8080/1.0/identifiers/did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG?state=E088921F2E27584EAFC815FAF3D5ECED523F0AB263E4D86AD457D26FBF6C242E
 
     const { inputs, pi_a, pi_b, pi_c } = prepareInputs(
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -199,7 +199,7 @@ describe('ERC 20 test for open', function () {
     const zkProof = packZKProof(inputs, pi_a, pi_b, pi_c);
     const crossChainProofs = packCrossChainProofs(
       await buildCrossChainProofs(
-        [globalStateMessage, identityStateMessage1 /*, identityStateUpdate2*/],
+        [globalStateMessage, identityStateMessage1, identityStateUpdate2],
         signer
       )
     );
