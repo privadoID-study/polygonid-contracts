@@ -1,5 +1,170 @@
+diff --git a/node_modules/@iden3/contracts/cross-chain/CrossChainProofValidator.sol b/node_modules/@iden3/contracts/cross-chain/CrossChainProofValidator.sol
+index 09f271f..e35ad50 100644
+--- a/node_modules/@iden3/contracts/cross-chain/CrossChainProofValidator.sol
++++ b/node_modules/@iden3/contracts/cross-chain/CrossChainProofValidator.sol
+@@ -1,10 +1,10 @@
+ // SPDX-License-Identifier: MIT
+ pragma solidity 0.8.27;
+-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+-import {MessageHashUtils, EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+-import {ICrossChainProofValidator} from "../interfaces/ICrossChainProofValidator.sol";
+-import {IState} from "../interfaces/IState.sol";
+-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
++import {ECDSA} from '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
++import {MessageHashUtils, EIP712} from '@openzeppelin/contracts/utils/cryptography/EIP712.sol';
++import {ICrossChainProofValidator} from '../interfaces/ICrossChainProofValidator.sol';
++import {IState} from '../interfaces/IState.sol';
++import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+ 
+ /**
+  * @dev Contract which provides proof validation from identity state
+@@ -15,17 +15,17 @@ contract CrossChainProofValidator is Ownable, EIP712, ICrossChainProofValidator
+ 
+     bytes32 public constant TYPE_HASH =
+         keccak256(
+-            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
++            'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'
+         );
+ 
+     bytes32 public constant IDENTITY_STATE_MESSAGE_TYPEHASH =
+         keccak256(
+-            "IdentityState(uint256 timestamp,uint256 id,uint256 state,uint256 replacedAtTimestamp)"
++            'IdentityState(uint256 timestamp,uint256 id,uint256 state,uint256 replacedAtTimestamp)'
+         );
+ 
+     bytes32 public constant GLOBAL_STATE_MESSAGE_TYPEHASH =
+         keccak256(
+-            "GlobalState(uint256 timestamp,bytes2 idType,uint256 root,uint256 replacedAtTimestamp)"
++            'GlobalState(uint256 timestamp,bytes2 idType,uint256 root,uint256 replacedAtTimestamp)'
+         );
+ 
+     bytes32 public immutable DOMAIN_SEPARATOR;
+@@ -83,10 +83,10 @@ contract CrossChainProofValidator is Ownable, EIP712, ICrossChainProofValidator
+             gsu.globalStateMsg,
+             gsu.signature
+         );
+-        require(isValid, "Global state proof is not valid");
++        require(isValid, 'Global state proof is not valid');
+         require(
+             recovered == _oracleSigningAddress,
+-            "Global state proof signing address is not valid"
++            'Global state proof signing address is not valid'
+         );
+ 
+         return
+@@ -117,10 +117,10 @@ contract CrossChainProofValidator is Ownable, EIP712, ICrossChainProofValidator
+             isu.idStateMsg,
+             isu.signature
+         );
+-        require(isValid, "Identity state proof is not valid");
++        require(isValid, 'Identity state proof is not valid');
+         require(
+             recovered == _oracleSigningAddress,
+-            "Identity state proof signing address is not valid"
++            'Identity state proof signing address is not valid'
+         );
+ 
+         return
+@@ -152,7 +152,7 @@ contract CrossChainProofValidator is Ownable, EIP712, ICrossChainProofValidator
+         )
+     {
+         return (
+-            hex"0f", // 01111
++            hex'0f', // 01111
+             _EIP712Name(),
+             _EIP712Version(),
+             0,
+@@ -208,18 +208,46 @@ contract CrossChainProofValidator is Ownable, EIP712, ICrossChainProofValidator
+         return MessageHashUtils.toTypedDataHash(DOMAIN_SEPARATOR, structHash);
+     }
+ 
++    function uint256ToString(uint256 value) internal pure returns (string memory) {
++        if (value == 0) {
++            return '0';
++        }
++        uint256 temp = value;
++        uint256 digits;
++        while (temp != 0) {
++            digits++;
++            temp /= 10;
++        }
++        bytes memory buffer = new bytes(digits);
++        while (value != 0) {
++            digits -= 1;
++            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
++            value /= 10;
++        }
++        return string(buffer);
++    }
++
+     function _calcReplacedAt(
+         uint256 oracleTimestamp,
+         uint256 replacedAtTimestamp
+     ) internal view returns (uint256 replacedAt) {
+         if (oracleTimestamp < block.timestamp - MAX_TIMESTAMP_LAG) {
+-            revert("Oracle timestamp cannot be in the past");
++            revert(
++                string(
++                    abi.encodePacked(
++                        'Oracle timestamp cannot be in the past: ',
++                        uint256ToString(oracleTimestamp),
++                        ' < ',
++                        uint256ToString(block.timestamp - MAX_TIMESTAMP_LAG)
++                    )
++                )
++            );
+         }
+ 
+         replacedAt = replacedAtTimestamp == 0 ? oracleTimestamp : replacedAtTimestamp;
+ 
+         if (replacedAt > block.timestamp + MAX_REPLACED_AT_AHEAD_OF_TIME) {
+-            revert("Oracle replacedAtTimestamp or oracle timestamp cannot be in the future");
++            revert('Oracle replacedAtTimestamp or oracle timestamp cannot be in the future');
+         }
+ 
+         // this should never happen as block.timestamp is always greater than 0
+diff --git a/node_modules/@iden3/contracts/lib/IdentityLib.sol b/node_modules/@iden3/contracts/lib/IdentityLib.sol
+index 1c4a218..67d3c02 100644
+--- a/node_modules/@iden3/contracts/lib/IdentityLib.sol
++++ b/node_modules/@iden3/contracts/lib/IdentityLib.sol
+@@ -1,10 +1,10 @@
+ // SPDX-License-Identifier: GPL-3.0
+ pragma solidity 0.8.27;
+ 
+-import {IState} from "../interfaces/IState.sol";
+-import {SmtLib} from "../lib/SmtLib.sol";
+-import {PoseidonUnit3L, PoseidonUnit4L} from "../lib/Poseidon.sol";
+-import {GenesisUtils} from "../lib/GenesisUtils.sol";
++import {IState} from '../interfaces/IState.sol';
++import {SmtLib} from '../lib/SmtLib.sol';
++import {PoseidonUnit3L, PoseidonUnit4L} from '../lib/Poseidon.sol';
++import {GenesisUtils} from '../lib/GenesisUtils.sol';
+ 
+ // /**
+ //  * @dev Contract managing onchain identity
+@@ -81,9 +81,9 @@ library IdentityLib {
+         uint256 depth,
+         bytes2 idType
+     ) external {
+-        require(depth <= IDENTITY_MAX_SMT_DEPTH, "SMT depth is greater than max allowed depth");
++        require(depth <= IDENTITY_MAX_SMT_DEPTH, 'SMT depth is greater than max allowed depth');
+         self.stateContract = IState(_stateContractAddr);
+-        require(self.stateContract.isIdTypeSupported(idType), "id type is not supported");
++        require(self.stateContract.isIdTypeSupported(idType), 'id type is not supported...');
+         self.isOldStateGenesis = true;
+         self.trees.claimsTree.initialize(depth);
+         self.trees.revocationsTree.initialize(depth);
+@@ -395,7 +395,7 @@ library IdentityLib {
+             self.rootsByState[state].claimsRoot == 0 &&
+                 self.rootsByState[state].revocationsRoot == 0 &&
+                 self.rootsByState[state].rootsRoot == 0,
+-            "Roots for this state already exist"
++            'Roots for this state already exist'
+         );
+         self.rootsByState[state] = roots;
+     }
 diff --git a/node_modules/@iden3/contracts/state/State.sol b/node_modules/@iden3/contracts/state/State.sol
-index dbb6f65..d352513 100644
+index dbb6f65..a2eef7c 100644
 --- a/node_modules/@iden3/contracts/state/State.sol
 +++ b/node_modules/@iden3/contracts/state/State.sol
 @@ -1,22 +1,23 @@
@@ -54,7 +219,13 @@ index dbb6f65..d352513 100644
          return _defaultIdType;
      }
  
-@@ -176,7 +177,7 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -171,12 +172,13 @@ contract State is Ownable2StepUpgradeable, IState {
+         uint256[2][2] memory b,
+         uint256[2] memory c
+     ) public {
++        console.log('transitState() id:', uint256ToString(id));
+         // Check if the id type is supported
+         getIdTypeIfSupported(id);
          uint256[4] memory input = [id, oldState, newState, uint256(isOldStateGenesis ? 1 : 0)];
          require(
              verifier.verifyProof(a, b, c, input),
@@ -63,7 +234,7 @@ index dbb6f65..d352513 100644
          );
  
          _transitState(id, oldState, newState, isOldStateGenesis);
-@@ -202,16 +203,16 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -202,16 +204,16 @@ contract State is Ownable2StepUpgradeable, IState {
          bytes2 idType = getIdTypeIfSupported(id);
          if (methodId == 1) {
              uint256 calcId = GenesisUtils.calcIdFromEthAddress(idType, msg.sender);
@@ -84,13 +255,32 @@ index dbb6f65..d352513 100644
          }
      }
  
-@@ -446,14 +447,14 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -440,20 +442,33 @@ contract State is Ownable2StepUpgradeable, IState {
+      * @return replacedAt The timestamp when the state of the identity was replaced by another state
+      */
+     function getStateReplacedAt(uint256 id, uint256 state) external view returns (uint256) {
++        console.log('getStateReplacedAt() id:', uint256ToString(id));
++        console.log('getStateReplacedAt() state:', uint256ToString(state));
+         if (isIdTypeSupported(GenesisUtils.getIdType(id))) {
++            console.log(
++                'getStateReplacedAt() Id Type is Supported:',
++                uint256ToString(id),
++                uint256ToString(uint256(uint16(GenesisUtils.getIdType(id))))
++            );
+             if (_stateData.stateExists(id, state)) {
+                 return _stateData.getStateInfoByIdAndState(id, state).replacedAtTimestamp;
              } else if (GenesisUtils.isGenesisState(id, state)) {
                  return 0;
              }
 -            revert("State entry not found");
++            console.log('getStateReplacedAt() State entry not found');
 +            revert('State entry not found');
          } else {
++            console.log(
++                'getStateReplacedAt() Id Type is NOT Supported',
++                uint256ToString(id),
++                uint256ToString(uint256(uint16(GenesisUtils.getIdType(id))))
++            );
              StateCrossChainStorage storage $ = _getStateCrossChainStorage();
              uint256 replacedAt = $._idToStateReplacedAt[id][state];
              if (replacedAt != 0) {
@@ -101,7 +291,7 @@ index dbb6f65..d352513 100644
          }
      }
  
-@@ -468,14 +469,21 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -468,14 +483,23 @@ contract State is Ownable2StepUpgradeable, IState {
              if (_gistData.rootExists(root)) {
                  return _gistData.getRootInfo(root).replacedAtTimestamp;
              }
@@ -118,14 +308,16 @@ index dbb6f65..d352513 100644
 +                string(
 +                    abi.encodePacked(
 +                        'Cross-chain GIST root not found for idType: ',
-+                        uint256ToString(uint256(uint16(idType)))
++                        uint256ToString(uint256(uint16(idType))),
++                        ', root: ',
++                        uint256ToString(root)
 +                    )
 +                )
 +            );
          }
      }
  
-@@ -492,23 +500,23 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -492,23 +516,23 @@ contract State is Ownable2StepUpgradeable, IState {
          uint256 newState,
          bool isOldStateGenesis
      ) internal {
@@ -155,7 +347,7 @@ index dbb6f65..d352513 100644
          _stateData.addState(id, newState);
          _gistData.addLeaf(PoseidonUnit1L.poseidon([id]), newState);
      }
-@@ -582,7 +590,16 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -582,7 +606,16 @@ contract State is Ownable2StepUpgradeable, IState {
       */
      function getIdTypeIfSupported(uint256 id) public view returns (bytes2) {
          bytes2 idType = GenesisUtils.getIdType(id);
@@ -166,18 +358,18 @@ index dbb6f65..d352513 100644
 +                abi.encodePacked(
 +                    'id type ',
 +                    uint256ToString(uint256(uint16(idType))),
-+                    ' is not supported'
++                    ' is not supported...'
 +                )
 +            )
 +        );
          return idType;
      }
  
-@@ -592,6 +609,26 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -592,6 +625,26 @@ contract State is Ownable2StepUpgradeable, IState {
       * @param supported ability to enable or disable id type support
       */
      function setSupportedIdType(bytes2 idType, bool supported) public onlyOwner {
-+        console.log('idType:', uint256ToString(uint256(uint16(idType))));
++        console.log('setSupportedIdType() idType:', uint256ToString(uint256(uint16(idType))));
          _stateData.isIdTypeSupported[idType] = supported;
      }
 +
@@ -429,3 +621,83 @@ index a972a12..26fadb7 100644
 +        return string(buffer);
 +    }
  }
+diff --git a/node_modules/@iden3/contracts/verifiers/ZKPVerifierBase.sol b/node_modules/@iden3/contracts/verifiers/ZKPVerifierBase.sol
+index 8d3f4d3..3dac949 100644
+--- a/node_modules/@iden3/contracts/verifiers/ZKPVerifierBase.sol
++++ b/node_modules/@iden3/contracts/verifiers/ZKPVerifierBase.sol
+@@ -1,12 +1,13 @@
+ // SPDX-License-Identifier: GPL-3.0
+ pragma solidity 0.8.27;
+ 
+-import {IZKPVerifier} from "../interfaces/IZKPVerifier.sol";
+-import {ICircuitValidator} from "../interfaces/ICircuitValidator.sol";
+-import {ArrayUtils} from "../lib/ArrayUtils.sol";
+-import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+-import {IState} from "../interfaces/IState.sol";
+-import {VerifierLib} from "../lib/VerifierLib.sol";
++import {IZKPVerifier} from '../interfaces/IZKPVerifier.sol';
++import {ICircuitValidator} from '../interfaces/ICircuitValidator.sol';
++import {ArrayUtils} from '../lib/ArrayUtils.sol';
++import {ContextUpgradeable} from '@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol';
++import {IState} from '../interfaces/IState.sol';
++import {VerifierLib} from '../lib/VerifierLib.sol';
++import {console} from 'hardhat/console.sol';
+ 
+ abstract contract ZKPVerifierBase is IZKPVerifier, ContextUpgradeable {
+     /// @dev Struct to store ZKP proof and associated data
+@@ -63,7 +64,7 @@ abstract contract ZKPVerifierBase is IZKPVerifier, ContextUpgradeable {
+     uint256 public constant REQUESTS_RETURN_LIMIT = 1000;
+ 
+     /// @dev Key to retrieve the linkID from the proof storage
+-    string constant LINKED_PROOF_KEY = "linkID";
++    string constant LINKED_PROOF_KEY = 'linkID';
+ 
+     /// @dev Linked proof custom error
+     error LinkedProofError(
+@@ -79,7 +80,7 @@ abstract contract ZKPVerifierBase is IZKPVerifier, ContextUpgradeable {
+         if (existence) {
+             require(requestIdExists(requestId), "request id doesn't exist");
+         } else {
+-            require(!requestIdExists(requestId), "request id already exists");
++            require(!requestIdExists(requestId), 'request id already exists');
+         }
+         _;
+     }
+@@ -153,7 +154,7 @@ abstract contract ZKPVerifierBase is IZKPVerifier, ContextUpgradeable {
+             $.writeProofResultsV2(sender, response.requestId, signals);
+ 
+             if (response.data.length > 0) {
+-                revert("Metadata not supported yet");
++                revert('Metadata not supported yet');
+             }
+         }
+     }
+@@ -187,7 +188,7 @@ abstract contract ZKPVerifierBase is IZKPVerifier, ContextUpgradeable {
+     /// @param requestIds the list of request IDs
+     /// Throws if the proofs are not linked
+     function verifyLinkedProofs(address sender, uint64[] calldata requestIds) public view virtual {
+-        require(requestIds.length > 1, "Linked proof verification needs more than 1 request");
++        require(requestIds.length > 1, 'Linked proof verification needs more than 1 request');
+ 
+         uint256 expectedLinkID = getProofStorageField(sender, requestIds[0], LINKED_PROOF_KEY);
+ 
+@@ -200,7 +201,7 @@ abstract contract ZKPVerifierBase is IZKPVerifier, ContextUpgradeable {
+ 
+             if (expectedLinkID != actualLinkID) {
+                 revert LinkedProofError(
+-                    "Proofs are not linked",
++                    'Proofs are not linked',
+                     requestIds[0],
+                     expectedLinkID,
+                     requestIds[i],
+@@ -227,6 +228,10 @@ abstract contract ZKPVerifierBase is IZKPVerifier, ContextUpgradeable {
+     /// @dev Gets the count of ZKP requests
+     /// @return The count of ZKP requests
+     function getZKPRequestsCount() public view returns (uint256) {
++        console.log(
++            'getZKPRequestsCount() _requestIds.length:',
++            _getZKPVerifierStorage()._requestIds.length
++        );
+         return _getZKPVerifierStorage()._requestIds.length;
+     }
+ 
