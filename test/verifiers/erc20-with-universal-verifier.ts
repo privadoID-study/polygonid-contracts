@@ -77,11 +77,11 @@ describe('ERC 20 test', function () {
     await mtp.setProofExpirationTimeout(tenYears);
   });
 
-    it('test', async () => {
-      // Wait for 20 seconds
-      await new Promise(resolve => setTimeout(resolve, 20000));
-      expect(true).to.be.true;
-    });
+  it('test', async () => {
+    // Wait for 20 seconds
+    await new Promise((resolve) => setTimeout(resolve, 20000));
+    expect(true).to.be.true;
+  });
 
   it('Requests count', async () => {
     expect(await universalVerifier.getZKPRequestsCount()).to.be.equal(2);
@@ -241,7 +241,6 @@ describe('ERC 20 test', function () {
       )
     );
     const metadatas = '0x';
-
 
     await universalVerifier.submitZKPResponseV2(
       [

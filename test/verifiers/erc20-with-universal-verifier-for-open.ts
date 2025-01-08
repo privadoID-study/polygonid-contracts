@@ -19,6 +19,9 @@ import {
 
 const tenYears = 315360000;
 
+const oneDay = 86400;
+const oneWeek = 604800;
+
 const query = {
   schema: BigInt('180410020913331409885634153623124536270'),
   claimPathKey: BigInt(
@@ -81,21 +84,21 @@ describe('ERC 20 test for open', function () {
 
     await setZKPRequests();
 
-    await sig.setProofExpirationTimeout(tenYears);
-    await mtp.setProofExpirationTimeout(tenYears);
+    await sig.setProofExpirationTimeout(oneWeek);
+    await mtp.setProofExpirationTimeout(oneWeek);
 
-    await sig.setGISTRootExpirationTimeout(tenYears);
-    await mtp.setGISTRootExpirationTimeout(tenYears);
+    await sig.setGISTRootExpirationTimeout(oneWeek);
+    await mtp.setGISTRootExpirationTimeout(oneWeek);
   });
 
   it('Example ERC20 Verifier: set zkp request Sig validator + submit zkp response V2', async () => {
     await erc20VerifierFlowV2('credentialAtomicQuerySigV2OnChain');
   });
-  /*
+
   it('Example ERC20 Verifier: set zkp request Mtp validator + submit zkp response V2', async () => {
     await erc20VerifierFlowV2('credentialAtomicQueryMTPV2OnChain');
   });
-*/
+
   async function setZKPRequests() {
     async function setRequest(requestId, query, validatorAddress) {
       await universalVerifier.setZKPRequest(requestId, {
@@ -111,7 +114,10 @@ describe('ERC 20 test for open', function () {
     await setRequest(0, query2, await sig.getAddress());
 
     query2.circuitIds = ['credentialAtomicQueryMTPV2OnChain'];
-    query2.skipClaimRevocationCheck = true;
+    query2.skipClaimRevocationCheck = false;
+    query2.queryHash = BigInt(
+      '101791640571768906367648684425886632868343723858483350314998880161290102263'
+    );
     await setRequest(1, query2, await mtp.getAddress());
   }
 
@@ -119,7 +125,11 @@ describe('ERC 20 test for open', function () {
     const query2 = Object.assign({}, query);
     query2.circuitIds = [validator];
     query2.skipClaimRevocationCheck =
-      validator === 'credentialAtomicQuerySigV2OnChain' ? false : true;
+      validator === 'credentialAtomicQuerySigV2OnChain' ? false : false;
+    query2.queryHash =
+      validator === 'credentialAtomicQuerySigV2OnChain'
+        ? BigInt('7854321536597559201098551954568590097739874725708651207094499063296207596002')
+        : BigInt('101791640571768906367648684425886632868343723858483350314998880161290102263');
 
     expect(requestId).to.be.equal(validator === 'credentialAtomicQuerySigV2OnChain' ? 0 : 1);
 
@@ -139,44 +149,85 @@ describe('ERC 20 test for open', function () {
     validator: 'credentialAtomicQueryMTPV2OnChain' | 'credentialAtomicQuerySigV2OnChain'
   ): Promise<void> {
     const timestamp = BigInt(Math.floor(Date.now() / 1000));
-    const bigint_root =
-      4088184107595327986751778597634067060289926760850725885926101289244613707147n;
-    console.log('erc20VerifierFlowV2() timestamp:', timestamp);
-    console.log('erc20VerifierFlowV2() bigint_root:', bigint_root);
-    const globalStateMessage = {
-      timestamp: timestamp,
-      idType: '0x0213', //'0x01A1',
-      root: bigint_root, //0n,
-      replacedAtTimestamp: 1736154273n
-    };
-    //curl http://localhost:8080/1.0/identifiers/did:polygonid:polygon:amoy:2qZYsH3XmWmC3PzHeWe7C3ahCVaEMUJbBYDo5NhEMb?gist=8B859C64C7FC3A8D60BA94BCF2015EA75D99FC5C1645E41A5D5CCF5E88D40909
+    console.log('erc20VerifierFlowV2() timestamp:', timestamp, 'validator:', validator);
+    let bigint_root;
 
-    const identityStateMessage1 = {
-      timestamp: timestamp,
-      id: 27511287406781424064262949052237354979178988383049147075679026794560361217n, //todo:verify did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG & 27511287406781424064262949052237354979178988383049147075679026794560361217n
-      state: 15543561709461355383430801751387051227231886662990843157449346585018625170315n,
-      replacedAtTimestamp: 1735887383n
-    };
+    let globalStateMessage;
+    let identityStateMessage1;
+    let identityStateUpdate2;
+    if (validator === 'credentialAtomicQuerySigV2OnChain') {
+      bigint_root = 4088184107595327986751778597634067060289926760850725885926101289244613707147n;
 
-    //curl http://localhost:8080/1.0/identifiers/did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG?state=8B1B24F106EA6B54C3C5693668AAFF1757A2F78BDE40ECFFEC9996F61A585D22
+      console.log('erc20VerifierFlowV2() bigint_root:', bigint_root);
+      globalStateMessage = {
+        timestamp: timestamp,
+        idType: '0x0213', //'0x01A1',
+        root: bigint_root, //0n,
+        replacedAtTimestamp: 1736154273n
+      };
+      //curl http://localhost:8080/1.0/identifiers/did:polygonid:polygon:amoy:2qZYsH3XmWmC3PzHeWe7C3ahCVaEMUJbBYDo5NhEMb?gist=8B859C64C7FC3A8D60BA94BCF2015EA75D99FC5C1645E41A5D5CCF5E88D40909
 
-    //https://www.mobilefish.com/services/big_number/big_number.php
-    //https://www.save-editor.com/tools/wse_hex.html#littleendian
+      identityStateMessage1 = {
+        timestamp: timestamp,
+        id: 27511287406781424064262949052237354979178988383049147075679026794560361217n, //todo:verify did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG & 27511287406781424064262949052237354979178988383049147075679026794560361217n
+        state: 15543561709461355383430801751387051227231886662990843157449346585018625170315n,
+        replacedAtTimestamp: 1735887383n
+      };
 
-    const identityStateUpdate2 = {
-      timestamp: timestamp,
-      id: 27511287406781424064262949052237354979178988383049147075679026794560361217n,
-      state: 20870748078893737009143669866363587797530199608693740726720179829793482770656n,
-      replacedAtTimestamp: 0n
-    };
+      //curl http://localhost:8080/1.0/identifiers/did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG?state=8B1B24F106EA6B54C3C5693668AAFF1757A2F78BDE40ECFFEC9996F61A585D22
 
-    //curl http://localhost:8080/1.0/identifiers/did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG?state=E088921F2E27584EAFC815FAF3D5ECED523F0AB263E4D86AD457D26FBF6C242E
+      //https://www.mobilefish.com/services/big_number/big_number.php
+      //https://www.save-editor.com/tools/wse_hex.html#littleendian
+
+      identityStateUpdate2 = {
+        timestamp: timestamp,
+        id: 27511287406781424064262949052237354979178988383049147075679026794560361217n,
+        state: 20870748078893737009143669866363587797530199608693740726720179829793482770656n,
+        replacedAtTimestamp: 0n
+      };
+
+      //curl http://localhost:8080/1.0/identifiers/did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG?state=E088921F2E27584EAFC815FAF3D5ECED523F0AB263E4D86AD457D26FBF6C242E
+    } else {
+      // credentialAtomicQueryMTPV2OnChain
+
+      bigint_root = 14858982451193685185870674858066191006268772740787283458755942934526870579302n;
+
+      console.log('erc20VerifierFlowV2() bigint_root:', bigint_root);
+      globalStateMessage = {
+        timestamp: timestamp,
+        idType: '0x0213', //'0x01A1',
+        root: bigint_root, //0n,
+        replacedAtTimestamp: 0n
+      };
+      //curl http://localhost:8080/1.0/identifiers/did:polygonid:polygon:amoy:2qZYsH3XmWmC3PzHeWe7C3ahCVaEMUJbBYDo5NhEMb?gist=6668BEF9C2A2811CAD0C2D763D8DDBD018E2B97D8F686D63EE995D02D3E2D920
+
+      identityStateMessage1 = {
+        timestamp: timestamp,
+        id: 27511287406781424064262949052237354979178988383049147075679026794560361217n, //todo:verify did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG & 27511287406781424064262949052237354979178988383049147075679026794560361217n
+        state: 15543561709461355383430801751387051227231886662990843157449346585018625170315n,
+        replacedAtTimestamp: 1735887383n
+      };
+
+      //curl http://localhost:8080/1.0/identifiers/did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG?state=8B1B24F106EA6B54C3C5693668AAFF1757A2F78BDE40ECFFEC9996F61A585D22
+
+      //https://www.mobilefish.com/services/big_number/big_number.php
+      //https://www.save-editor.com/tools/wse_hex.html#littleendian
+
+      identityStateUpdate2 = {
+        timestamp: timestamp,
+        id: 27511287406781424064262949052237354979178988383049147075679026794560361217n,
+        state: 20870748078893737009143669866363587797530199608693740726720179829793482770656n,
+        replacedAtTimestamp: 0n
+      };
+
+      //curl http://localhost:8080/1.0/identifiers/did:iden3:polygon:amoy:xHbKLu59qbdhPRJGfZBMiCRv8bGMBvtHzhpEBRZZG?state=E088921F2E27584EAFC815FAF3D5ECED523F0AB263E4D86AD457D26FBF6C242E
+    }
 
     const { inputs, pi_a, pi_b, pi_c } = prepareInputs(
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       validator === 'credentialAtomicQuerySigV2OnChain'
         ? require('./common-data/sig_on_chain_test.json')
-        : require('./common-data/valid_mtp_user_non_genesis_challenge_address.json')
+        : require('./common-data/mtp_on_chain_test.json')
     );
 
     const [signer] = await ethers.getSigners();
