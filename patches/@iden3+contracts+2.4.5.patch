@@ -163,8 +163,80 @@ index 1c4a218..67d3c02 100644
          );
          self.rootsByState[state] = roots;
      }
+diff --git a/node_modules/@iden3/contracts/lib/StateCrossChainLib.sol b/node_modules/@iden3/contracts/lib/StateCrossChainLib.sol
+index 4292ab0..d27c334 100644
+--- a/node_modules/@iden3/contracts/lib/StateCrossChainLib.sol
++++ b/node_modules/@iden3/contracts/lib/StateCrossChainLib.sol
+@@ -1,17 +1,37 @@
+ // SPDX-License-Identifier: GPL-3.0
+ pragma solidity 0.8.27;
+ 
+-import {IState} from "../interfaces/IState.sol";
+-import {State} from "../state/State.sol";
+-
++import {IState} from '../interfaces/IState.sol';
++import {State} from '../state/State.sol';
++import 'hardhat/console.sol';
+ /**
+  * @title StateCrossChainLib
+  * @dev The library provides functions to process cross chain proofs.
+  */
++
+ library StateCrossChainLib {
+-    bytes32 private constant GLOBAL_STATE_PROOF_TYPE = keccak256(bytes("globalStateProof"));
++    bytes32 private constant GLOBAL_STATE_PROOF_TYPE = keccak256(bytes('globalStateProof'));
+ 
+-    bytes32 private constant STATE_PROOF_TYPE = keccak256(bytes("stateProof"));
++    bytes32 private constant STATE_PROOF_TYPE = keccak256(bytes('stateProof'));
++
++    function uint256ToString_lib(uint256 value) internal pure returns (string memory) {
++        if (value == 0) {
++            return '0';
++        }
++        uint256 temp = value;
++        uint256 digits;
++        while (temp != 0) {
++            digits++;
++            temp /= 10;
++        }
++        bytes memory buffer = new bytes(digits);
++        while (value != 0) {
++            digits -= 1;
++            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
++            value /= 10;
++        }
++        return string(buffer);
++    }
+ 
+     /**
+      * @dev Processes cross chain proofs.
+@@ -36,6 +56,15 @@ library StateCrossChainLib {
+                 IState.GlobalStateProcessResult memory gsp = self
+                     ._crossChainProofValidator
+                     .processGlobalStateProof(proofs[i].proof);
++                console.log(
++                    'processCrossChainProofs gsp.idType:',
++                    uint256ToString_lib(uint256(uint16(gsp.idType)))
++                );
++                console.log('processCrossChainProofs gsp.root:', uint256ToString_lib(gsp.root));
++                console.log(
++                    'processCrossChainProofs gsp.replacedAtTimestamp:',
++                    uint256ToString_lib(gsp.replacedAtTimestamp)
++                );
+                 self._rootToGistRootReplacedAt[gsp.idType][gsp.root] = gsp.replacedAtTimestamp;
+             } else if (keccak256(bytes(proofs[i].proofType)) == STATE_PROOF_TYPE) {
+                 IState.IdentityStateProcessResult memory isu = self
+@@ -43,7 +72,7 @@ library StateCrossChainLib {
+                     .processIdentityStateProof(proofs[i].proof);
+                 self._idToStateReplacedAt[isu.id][isu.state] = isu.replacedAtTimestamp;
+             } else {
+-                revert("Unknown proof type");
++                revert('Unknown proof type');
+             }
+         }
+     }
 diff --git a/node_modules/@iden3/contracts/state/State.sol b/node_modules/@iden3/contracts/state/State.sol
-index dbb6f65..a2eef7c 100644
+index dbb6f65..1fd332d 100644
 --- a/node_modules/@iden3/contracts/state/State.sol
 +++ b/node_modules/@iden3/contracts/state/State.sol
 @@ -1,22 +1,23 @@
@@ -255,7 +327,7 @@ index dbb6f65..a2eef7c 100644
          }
      }
  
-@@ -440,20 +442,33 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -440,20 +442,42 @@ contract State is Ownable2StepUpgradeable, IState {
       * @return replacedAt The timestamp when the state of the identity was replaced by another state
       */
      function getStateReplacedAt(uint256 id, uint256 state) external view returns (uint256) {
@@ -287,11 +359,20 @@ index dbb6f65..a2eef7c 100644
                  return replacedAt;
              }
 -            revert("Cross-chain state not found");
-+            revert('Cross-chain state not found');
++            revert(
++                string(
++                    abi.encodePacked(
++                        'Cross-chain state not found for id: ',
++                        uint256ToString(id),
++                        ', state: ',
++                        uint256ToString(state)
++                    )
++                )
++            );
          }
      }
  
-@@ -468,14 +483,23 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -468,14 +492,23 @@ contract State is Ownable2StepUpgradeable, IState {
              if (_gistData.rootExists(root)) {
                  return _gistData.getRootInfo(root).replacedAtTimestamp;
              }
@@ -317,7 +398,7 @@ index dbb6f65..a2eef7c 100644
          }
      }
  
-@@ -492,23 +516,23 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -492,23 +525,23 @@ contract State is Ownable2StepUpgradeable, IState {
          uint256 newState,
          bool isOldStateGenesis
      ) internal {
@@ -347,7 +428,7 @@ index dbb6f65..a2eef7c 100644
          _stateData.addState(id, newState);
          _gistData.addLeaf(PoseidonUnit1L.poseidon([id]), newState);
      }
-@@ -582,7 +606,16 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -582,7 +615,16 @@ contract State is Ownable2StepUpgradeable, IState {
       */
      function getIdTypeIfSupported(uint256 id) public view returns (bytes2) {
          bytes2 idType = GenesisUtils.getIdType(id);
@@ -365,7 +446,7 @@ index dbb6f65..a2eef7c 100644
          return idType;
      }
  
-@@ -592,6 +625,26 @@ contract State is Ownable2StepUpgradeable, IState {
+@@ -592,6 +634,26 @@ contract State is Ownable2StepUpgradeable, IState {
       * @param supported ability to enable or disable id type support
       */
      function setSupportedIdType(bytes2 idType, bool supported) public onlyOwner {
